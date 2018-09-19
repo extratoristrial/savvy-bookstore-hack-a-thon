@@ -1,4 +1,4 @@
-import axios from 'axios';
+import Axios from 'axios';
 import Navigation from './components/Navigation';
 import Header from './components/Header';
 import Content from './components/Content';
@@ -57,11 +57,9 @@ function render(books){
            ${Footer()}
         `;
 
-    document
-        .getElementById('bookInput')
-        .addEventListener('submit', (event) => {
-            event.preventDefault();
-        });
-}
+
+       
+};
+
 
 render(Books);
