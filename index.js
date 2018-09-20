@@ -1,65 +1,78 @@
-import Axios from 'axios';
 import Navigation from './components/Navigation';
 import Header from './components/Header';
 import Content from './components/Content';
 import Footer from './components/Footer';
+import Axios from 'axios';
 
-var Books = [
-    {
-        'id': 1,
-        'name': 'Fried Chicken - A Guide',
-        'author': 'Col Sanders',
-        'pictureUrl':
-    'https://food.fnr.sndimg.com/content/dam/images/food/fullset/2009/5/27/0/0125629_03_chicken-in-skillet_s4x3.jpg.rend.hgtvcom.616.462.suffix/1371589386937.jpeg',
-        'price': 4.99,
-        'sellingPoints': [
-            "Finger Lickin' Good - Some Guy",
-            "#1 on KFC's Best Seller List",
-            "Don't Buy this Book - Jillian Michaels"
-        ]
-    },
+var products = [];
 
-    {
-        'id': 2,
-        'name': 'The Savvy Life',
-        'author': 'Elaine Alex',
-        'pictureUrl':
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Typing_computer_screen_reflection.jpg/800px-Typing_computer_screen_reflection.jpg',
-        'price': 33,
-        'sellingPoints': [
-            'Enlightenment into the world of Front-End Web Development',
-            'New York Times Best Seller',
-            'This book is totally awsome - Dr. Suess'
-        ]
-    },
-
-    {
-        'id': 3,
-        'name': 'Becoming Snoop Lion',
-        'author': 'Snoop Dizzle',
-        'pictureUrl': 'https://i.kym-cdn.com/photos/images/facebook/000/367/035/e34.jpg',
-        'price': 42.0,
-        'sellingPoints': [
-            "You'll fall deep into the weeds throught this highly addictive story - Willie Nelson",
-            'High Times Best Seller',
-            'Each Chapter Contains a Different Strain Thoughts - Seth Rogen'
-        ]
-    },
-];
-
-function render(books){
+function render(items){
     document
         .querySelector('#root')
         .innerHTML = `
            ${Header()}
            ${Navigation()}
-           ${Content(books)}
+           ${Content(items)}
            ${Footer()}
         `;
 
+    document
+        .getElementById('bookInput')
+        .addEventListener('submit', (event) => {
+            event.preventDefault();
+            var newProduct = Array.from(event
+                .target
+                .elements)
+            var object = {
+                "title": newProduct[0].value,
+                "creator": newProduct[1].value,
+                "price": newProduct[2].value,
+                "image": newProduct[3].value,
+                "selling_points": newProduct[4].value.split('\n').filter(sp => sp.length > 0),
+                "type": newProduct[5].value
+            }
+            Axios
+                .post('https://api.savvycoders.com/books', object)
+                .then(function(response) {console.log(response)});
+        });
 
-       
-};
+    document
+        .querySelectorAll('span.delete a')
+        .forEach((deleteLink) => {
+            deleteLink.addEventListener('click', (event) => {   // Replace navigation with this eventlistener
+                event.preventDefault();                         // And prevent default behavior
 
+                Axios
+                    .delete(`https://api.savvycoders.com/books/${deleteLink.id}`) // Delete it from the API
+                    .then(
+                        () => render(products.filter((product) => product.id !== deleteLink.id))
+                    );
+            });
+        });
 
-render(Books);
+    document.querySelector('.nav-books a').addEventListener('click', (event) => { // When we click the books link
+        event.preventDefault();
+        render(products.filter((item) => item.type === 'book'));             // Filter only books
+    });
+
+    document.querySelector('.nav-music a').addEventListener('click', (event) => { // Likewise for music
+        event.preventDefault();
+        render(products.filter((item) => item.type === 'music'));
+    });
+}
+
+Axios
+    .get('https://api.savvycoders.com/books')
+    .then((booksResponse) => {
+        var books = booksResponse.data;
+
+        Axios
+            .get('https://api.savvycoders.com/albums')
+            .then((albumsResponse) => {
+                var albums = albumsResponse.data;
+
+                products = books.concat(albums);
+
+                render(products);
+            });
+    });
